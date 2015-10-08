@@ -1,0 +1,15 @@
+- name: wait for vm to stop
+  uri: url=https://[host]:8006/api2/json/nodes/proxmox05/qemu/{{ nextvmid['json']['data'] }}/status/current method=GET HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}"
+  register: vm_stop_status
+  until: vm_stop_status['json']['data']['status'] == 'stopped'
+  retries: 6
+  delay: 10
+
+- name: vm final config
+  uri: url=https://[host]:8006/api2/json/nodes/proxmox05/qemu/{{ nextvmid['json']['data'] }}/config method=PUT body="delete=net1" HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}" HEADER_CSRFPreventionToken="{{ login['json']['data']['CSRFPreventionToken'] }}"
+  register: vm_final_config
+
+- name: vm start
+  uri: url=https://[host]:8006/api2/json/nodes/proxmox05/qemu/{{ nextvmid['json']['data'] }}/status/start method=POST HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}" HEADER_CSRFPreventionToken="{{ login['json']['data']['CSRFPreventionToken'] }}"
+  register: vm_start
+

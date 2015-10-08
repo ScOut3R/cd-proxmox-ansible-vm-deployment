@@ -1,0 +1,33 @@
+- name: resize hdd
+  command: resize2fs /dev/vda
+
+- name: apt-get dist-upgrade
+  apt: upgrade=dist update_cache=yes
+
+- name: apt cache cleanup
+  command: apt-get clean
+
+- name: setup hostname
+  template: src=hostname.j2 dest=/etc/hostname
+
+- name: set root password
+  user: name=root password={{ root_password }}
+
+- name: setup network interface
+  template: src=interfaces.j2 dest=/etc/network/interfaces
+
+- name: delete authorized_keys
+  command: rm /root/.ssh/authorized_keys
+
+- name: delete bash history
+  command: rm /root/.bash_history
+
+- name: delete old  ssh host keys
+  shell: /bin/rm /etc/ssh/ssh_host_*
+
+- name: generate new ssh host keys
+  command: ssh-keygen -A
+
+- name: stop for final configuration
+  command: poweroff
+

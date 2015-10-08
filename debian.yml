@@ -1,0 +1,11 @@
+- include: proxmox.yml
+
+- name: initialize debian wombat VM
+  hosts: debian
+  user: root
+
+  roles:
+   - debian
+   - common
+
+- include: proxmox_final.yml

@@ -1,0 +1,35 @@
+- name: get ticket
+  action: uri url=https://[host]:8006/api2/json/access/ticket  method=POST body="username=[username]@pve&password=[password]"
+  register: login
+
+- name: get next id
+  action: uri url=https://[host]:8006/api2/json/cluster/nextid method=GET HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}"
+  register: nextvmid
+
+- name: clone template
+  action: uri url=https://[host]:8006/api2/json/nodes/proxmox05/qemu/{{ template_id }}/clone method=POST body="newid={{ nextvmid['json']['data'] }}&full=1&name={{ hostname }}&pool=Plex&storage=rbd3plex&format=raw&target=proxmox05" HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}" HEADER_CSRFPreventionToken="{{ login['json']['data']['CSRFPreventionToken'] }}"
+  register: clone
+
+- name: check clone status
+  uri: url=https://[host]:8006/api2/json/nodes/proxmox05/tasks/{{ clone['json']['data'] }}/status method=GET HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}"
+  register: clone_status
+  until: clone_status['json']['data']['status'] != 'running'
+  retries: 12
+  delay: 10
+
+- name: resize hdd
+  uri: url=https://[host]:8006/api2/json/nodes/proxmox05/qemu/{{ nextvmid['json']['data'] }}/resize method=PUT body="disk=virtio0&size={{ hdd_size }}" HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}" HEADER_CSRFPreventionToken="{{ login['json']['data']['CSRFPreventionToken'] }}"
+  register: resize_hdd
+
+- name: vm config
+  uri: url=https://[host]:8006/api2/json/nodes/proxmox05/qemu/{{ nextvmid['json']['data'] }}/config method=PUT body="cores={{ vm_cores }}&memory={{ vm_memory }}" HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}" HEADER_CSRFPreventionToken="{{ login['json']['data']['CSRFPreventionToken'] }}"
+  register: vm_config
+
+- name: vm start
+  uri: url=https://[host]:8006/api2/json/nodes/proxmox05/qemu/{{ nextvmid['json']['data'] }}/status/start method=POST HEADER_Cookie="PVEAuthCookie={{ login['json']['data']['ticket'] }}" HEADER_CSRFPreventionToken="{{ login['json']['data']['CSRFPreventionToken'] }}"
+  register: vm_start
+
+#ugly hack
+- name: wait for vm to start
+  command: sleep 60
+

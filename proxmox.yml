@@ -1,0 +1,7 @@
+- name: clone proxmox XM
+  hosts: proxmox
+  user: root
+
+  roles:
+   - proxmox
+

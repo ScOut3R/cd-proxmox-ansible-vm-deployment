@@ -1,0 +1,11 @@
+- include: proxmox.yml
+
+- name: initialize ubuntu wombat VM
+  hosts: ubuntu
+  user: root
+
+  roles:
+   - ubuntu
+   - common
+
+- include: proxmox_final.yml

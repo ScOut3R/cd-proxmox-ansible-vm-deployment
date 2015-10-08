@@ -1,0 +1,7 @@
+- name: proxmox final configurtion
+  hosts: proxmox
+  user: root
+
+  roles:
+   - proxmox_final
+
